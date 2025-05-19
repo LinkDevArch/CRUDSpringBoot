@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gestión de Productos</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <style>
+        .table-container {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .action-buttons .btn {
+            margin-right: 0.25rem;
+        }
+        .btn-add {
+            margin-bottom: 1rem;
+        }
+        .table thead {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body class="bg-light">
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="mb-3">Catálogo de Productos</h2>
+            <p class="text-muted">Gestiona el inventario y precios de tus productos</p>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col">
+            <a th:href="@{'/products/add'}" class="btn btn-primary btn-add">
+                <i class="bi bi-plus-circle me-2"></i>Añadir Producto
+            </a>
+        </div>
+    </div>
+
+    <div class="card table-container">
+        <div class="card-header py-3">
+            <div class="row">
+                <div class="col">
+                    <h5 class="mb-0">Listado de Productos</h5>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                    <tr>
+                        <th class="text-center" scope="col">ID</th>
+                        <th scope="col">Nombre del Producto</th>
+                        <th scope="col">Descripción</th>
+                        <th class="text-end" scope="col">Precio</th>
+                        <th scope="col">Categoría</th>
+                        <th class="text-center" scope="col">Stock</th>
+                        <th class="text-center" scope="col">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="prod : ${products}">
+                        <td class="text-center" th:text="${prod.id}">ID</td>
+                        <td th:text="${prod.productName}">Nombre</td>
+                        <td th:text="${prod.description}">Descripción</td>
+                        <td class="text-end" th:text="${#numbers.formatDecimal(prod.price, 1, 2, 'POINT')} + ' €'">Precio</td>
+                        <td>
+                            <span class="badge bg-secondary" th:text="${prod.category}">Categoría</span>
+                        </td>
+                        <td class="text-center">
+                            <span th:class="${prod.stock > 10} ? 'badge bg-success' : 'badge bg-danger'" th:text="${prod.stock}">Stock</span>
+                        </td>
+                        <td class="text-center">
+                            <div class="action-buttons">
+                                <a th:href="@{'/products/edit/'+${prod.id}}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </a>
+                                <form th:action="@{'/products/delete/'+${prod.id}}" method="post" style="display:inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Estás seguro de eliminar este producto?')">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer">
+            <small class="text-muted">Mostrando <span th:text="${#lists.size(products)}">0</span> productos</small>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS Bundle with Popper -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
