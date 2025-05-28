@@ -1,14 +1,21 @@
 package org.johancompany.crudspringboot.controllers;
 
 import jakarta.validation.Valid;
-import org.johancompany.crudspringboot.domain.ProductDTO;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.johancompany.crudspringboot.dtos.ProductDTO;
+import org.johancompany.crudspringboot.dtos.ProductStatisticsDTO;
 import org.johancompany.crudspringboot.services.ProductService;
-import org.springframework.http.HttpStatus;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.List;
 
 @Controller
 @RequestMapping("/products")
@@ -21,11 +28,26 @@ public class ProductController {
     }
 
     @GetMapping
-    public String getProducts(Model model) {
-        model.addAttribute("products", productService.findAll());
+    public String getProducts(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String filter,
+            Model model) {
+
+        List<ProductDTO> products = productService.searchProducts(search);
+        products = productService.filterProducts(filter, products);
+
+        ProductStatisticsDTO statistics = productService.getProductStatistics();
+
+        model.addAttribute("products", products);
+        model.addAttribute("totalProducts", statistics.getTotalProducts());
+        model.addAttribute("uniqueCategories", statistics.getUniqueCategories());
+        model.addAttribute("lowStockCount", statistics.getLowStockCount());
+        model.addAttribute("searchTerm", search);
+        model.addAttribute("currentFilter", filter);
 
         return "productsCrud";
     }
+
 
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable Long id, Model model) {
@@ -34,7 +56,6 @@ public class ProductController {
                     new ResponseStatusException(HttpStatus.NOT_FOUND, "Producto no encontrado con id " + id)
                 );
         model.addAttribute("product", product);
-
         return "productForm";
     }
 
@@ -59,4 +80,33 @@ public class ProductController {
         return "redirect:/products";
     }
 
+    @GetMapping("/export/excel")
+    public ResponseEntity<ByteArrayResource> exportarExcel() {
+        List<ProductDTO> productos = productService.findAll();
+        Workbook wb = productService.genExcel(productos);
+
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            wb.write(out);
+            byte[] bytes = out.toByteArray();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentDisposition(
+                    ContentDisposition.builder("attachment")
+                            .filename("productos.xlsx")
+                            .build()
+            );
+            headers.setContentType(
+                    MediaType.parseMediaType(
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+            );
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(new ByteArrayResource(bytes));
+
+        } catch (IOException e) {
+            throw new RuntimeException("Error al generar Excel", e);
+        }
+    }
 }
